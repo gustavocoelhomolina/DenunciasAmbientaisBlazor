@@ -1,0 +1,203 @@
+﻿@page "/VerificarDenuncias"
+@inject HttpClient Http
+@using System.Text.Json
+@using System.Threading.Tasks
+@using DenunciasAmbientaisBlazor.Models;
+@using static System.Net.WebRequestMethods;
+@inject HttpClient HttpClient
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de denúncias</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Adicione aqui seus estilos ou referências a folhas de estilo -->
+    @* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"> *@
+@*     <link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+    <script src="css/font-awesome/js/all.min.js"></script>
+ *@
+</head>
+<body>
+    <h1>Lista de Denúncias</h1>
+
+@if (denuncias == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Descricao</th>
+                <th>DataDenuncia</th>
+                <th>Tipo</th>
+@*                 <th>Foto?</th> *@
+                <th>Verificado?</th>
+                <th>Encaminhado?</th>
+                <th>EncaminhadoQuem?</th>
+                <th>Editar</th>
+                <th>Excluir</th>
+            </tr>
+        </thead>
+        <tbody>
+                @foreach (var denuncia in denuncias)
+            {
+                <tr>
+                    <td>@denuncia.Id)</td>
+                    @if (denuncia.DescricaoDenuncia.Length > 40)
+                    {
+                        string denunciaSubString = denuncia.DescricaoDenuncia.Substring(0, 40);
+                        <td>@denunciaSubString [...]</td>
+                    }
+                    else
+                    {
+                        <td>@denuncia.DescricaoDenuncia</td>
+                    }
+                    <td>@denuncia.DataDenuncia.ToString("dd/MM/yyyy")</td>
+                    <td>@denuncia.Tipo</td>
+@*                     <td>
+                        <div>
+                            @if (denuncia.FotoDenuncia != "undefined")
+                            {
+                                <label style="color:green;">SIM</label>
+                            }
+                            else
+                            {
+                                <label style="color:red;">NÃO</label>      
+                            }
+                        </div> 
+                    </td> *@
+                    <td>
+                        @if (denuncia.DenunciaVerificada != null && denuncia.DenunciaVerificada != false)
+                        {
+                                <label style="color:green;">SIM</label>
+                        }
+                        else
+                        {
+                                <label style="color:red;">NÃO</label>
+                        }
+                    </td>
+
+                    <td>
+                        @if (denuncia.DenunciaEncaminhadaParaAutoridades != null && denuncia.DenunciaEncaminhadaParaAutoridades != false)
+                        {
+                            <label style="color:green;">SIM</label>
+                        }
+                        else
+                        {
+                            <label style="color:red;">NÃO</label>
+                        }
+                    </td>
+
+                    
+                        @if (!String.IsNullOrEmpty(denuncia.QualAutoridadeFoiEncaminhada))
+                        {
+                            <td>@denuncia.QualAutoridadeFoiEncaminhada</td>
+                        }
+                        else
+                        {
+                            <td>------</td>
+                        }
+                    
+                    
+@*                     <td>@denuncia.DenunciaVerificada</td>
+                    <td>@denuncia.DenunciaEncaminhadaParaAutoridades</td>
+                    <td>@denuncia.QualAutoridadeFoiEncaminhada</td> *@
+                    <td>
+                        <button @onclick="(() => EditarDenuncia(denuncia.Id))">Editar</button>
+                    </td>
+                    <td>
+                        <button @onclick="(() => ExcluirDenuncia(denuncia.Id))">Excluir</button>
+                    </td>
+                       
+                    </tr>
+            }
+        </tbody>
+    </table>
+
+
+
+}
+</body>
+
+    <script>
+        window.showConfirmation = async () => {
+            return await Swal.fire({
+                title: 'Tem certeza que deseja excluir esta denúncia?',
+                text: 'Essa ação não pode ser desfeita.',
+                icon: 'question',
+                showCancelButton: true,
+            });
+        };
+
+        window.showFail = async () => {
+            return await Swal.fire({
+                title: 'Não foi possível excluir esta denúncia!',
+                text: 'Pedimos desculpas pela inconveniência, tente novamente em alguns minutos.',
+                icon: 'warning',
+                showCancelButton: false,
+            });
+        };
+    </script>
+</html>
+
+@code {
+
+    private DenunciasModel[]? denuncias;
+
+    protected override async Task OnInitializedAsync()
+    {
+        denuncias = await Http.GetFromJsonAsync<DenunciasModel[]>("http://localhost:5041/api/Denuncias/TodasDenuncias");
+    }
+
+
+    private void EditarDenuncia(int id)
+    {
+        NavigationManager.NavigateTo($"/EditarDenuncia/{id}");
+    }
+
+    private async Task ExcluirDenuncia(int id)
+    {
+        // Fazer a chamada à API para excluir a denúncia com base no ID
+        var response = await Http.GetAsync($"http://localhost:5041/api/Denuncias/DeletarDenuncia/{id}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            NavigationManager.NavigateTo("/VerificarDenuncias", forceLoad: true);
+        }
+        else
+        {
+            // Lógica para lidar com falha na exclusão
+            Console.WriteLine($"Falha ao excluir a denúncia com ID {id}");
+        }
+    }
+
+    // private async Task ExcluirDenuncia(int id)
+    // {
+    //     // Chamar a função JavaScript para mostrar a confirmação    
+    //     bool confirmacao = await JS.InvokeAsync<bool>("showConfirmation", true);
+
+    //     if (confirmacao)
+    //     {
+    //         // Fazer a chamada à API para excluir a denúncia com base no ID
+    //         var response = await Http.GetAsync($"http://localhost:5041/api/Denuncias/DeletarDenuncia/{id}");
+
+    //         if (response.IsSuccessStatusCode)
+    //         {
+    //             // Atualizar a lista após a exclusão
+    //             NavigationManager.NavigateTo("/VerificarDenuncias", forceLoad: true);
+    //         }
+    //         else
+    //         {
+    //             // Lógica para lidar com falha na exclusão
+    //             Console.WriteLine($"Falha ao excluir a denúncia com ID {id}");
+    //         }
+    //     }
+
+    // }
+}

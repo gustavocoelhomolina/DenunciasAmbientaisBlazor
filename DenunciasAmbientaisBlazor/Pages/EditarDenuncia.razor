@@ -1,0 +1,172 @@
+﻿@page "/EditarDenuncia/{id:int}"
+@inject HttpClient Http
+@using System.Text.Json
+@using System.Threading.Tasks
+@using DenunciasAmbientaisBlazor.Models
+@inject NavigationManager NavigationManager
+
+<h1>Editar Denúncia</h1>
+
+@if (denuncia == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        @* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"> *@
+        <title>Denúncias ambientais anônimas</title>
+    </head>
+
+    <body>
+
+            <label class="readonly-label">ID:</label><br>
+            <label class="readonly">@denuncia.Id</label> <br>
+
+            <label for="descricao" class="readonly-label">Descrição:</label><br>
+            <textarea id="descricao" name="descricao" rows="4" cols="50" value="@denuncia.DescricaoDenuncia" readonly class="readonly"></textarea><br>
+            @* <input type="text" id="descricao" name="descricao" value="@denuncia.DescricaoDenuncia" readonly class="readonly" /> <br> *@
+
+            <label for="data" class="readonly-label">Data Denúncia:</label><br>
+            <input type="text" id="data" name="data" value="@denuncia.DataDenuncia.ToString("dd/MM/yyyy")" readonly class="readonly" /> <br>
+
+            <label for="tipo" class="readonly-label">Tipo:</label><br>
+            <input type="text" id="tipo" name="tipo" value="@denuncia.Tipo" readonly class="readonly" /> <br>
+
+            @if(denuncia.FotoDenuncia != "undefined")
+            {
+                <label class="readonly-label">Foto da denúncia (imagem):</label>
+
+                <br />
+                <img src="@($"data:image/png;base64,{denuncia.FotoDenuncia}")" alt="Foto da Denúncia" />
+            }
+            <br><br><br>
+
+            <form id="formEditarDenuncia">
+                <input type="number" id="id" name="id" hidden value="@denuncia.Id">
+
+                <label for="denunciaVerificada">Denúncia foi verificada?*:     </label>
+                <input type="checkbox" id="denunciaVerificada" name="denunciaVerificada" @bind="denuncia.DenunciaVerificada"/><br><br>
+
+                <label for="denunciaEncaminhada">Denúncia foi encaminahda às autoridades?*:     </label>
+                <input type="checkbox" id="denunciaEncaminhada" name="denunciaEncaminhada" @bind="denuncia.DenunciaEncaminhadaParaAutoridades"/><br><br>
+
+                <label for="quemEncaminhada">Para qual autoridade foi encaminhada?*:</label><br>
+                <input type="text" id="quemEncaminhada" name="quemEncaminhada" value="@denuncia.QualAutoridadeFoiEncaminhada"><br>
+
+
+                <br><br><br>
+                <button type="button" onclick="editarDenuncia()">Editar denúncia</button>
+            </form>
+
+            <div id="lblStatus"></div>
+
+
+        
+
+        <br><br><br>
+        <button @onclick="VoltarParaLista">Voltar para a lista de denúncias</button>
+
+
+        <style>
+            .readonly {
+                background-color: #ddd; /* Cor de fundo cinza */
+                color: #333; /* Cor do texto mais clara */
+                border: 1px solid #ccc; /* Borda fina para destaque */
+                padding: 5px; /* Adiciona um espaçamento interno */
+            }
+
+            .readonly-label {
+                font-weight: bold; /* Texto em negrito para rótulos */
+            }
+        </style>
+
+        <script>
+            async function editarDenuncia() {
+                var idDenuncia = document.getElementById("id").value;
+                var denunciaVerificada = document.getElementById("denunciaVerificada").checked;
+                var denunciaEncaminhada = document.getElementById("denunciaEncaminhada").checked;
+                var quemEncaminhada = document.getElementById("quemEncaminhada").value;
+                var quemEncaminhadaValor = "";
+
+
+                if (quemEncaminhada !== null && quemEncaminhada !== '') {
+                    quemEncaminhadaValor = quemEncaminhada;
+                } else {
+                    quemEncaminhadaValor = 'Não informado';
+                }
+
+
+                var url = `http://localhost:5041/api/Denuncias/atualizarDenuncia/${idDenuncia}?denunciaVerificada=${denunciaVerificada}&denunciaEncaminhada=${denunciaEncaminhada}&quemEncaminhada=${quemEncaminhadaValor}`;
+
+
+
+                try {
+                    var resposta = await fetch(url, {
+                        method: "GET"
+                    });
+
+                    if (resposta.ok) {
+                        document.getElementById("lblStatus").innerText = "A denúncia foi atualizada!";
+                    } else {
+                        document.getElementById("lblStatus").innerText = "Falha na conexão com a API, por favor tente novamente em alguns minutos! Pedimos desculpas pela inconveniência!";
+                    }
+                } catch (error) {
+                    console.error("Erro ao atualizar a denúncia:", error);
+                    document.getElementById("lblResultado").innerText = "Erro ao atualizar a denúncia";
+                }
+            }
+        </script>
+
+@*         <script>
+            async function editarDenuncia() {
+                var form = document.getElementById("formEditarDenuncia");
+                var formData = new FormData(form);
+
+                var idDenuncia = document.getElementById("id")
+
+                var url = `http://localhost:5041/api/Denuncias/atualizarDenuncia/${idDenuncia.value}`;
+                // window.location.href = "Sucesso.cshtml";
+
+                try {
+                    var resposta = await fetch(url, {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (resposta.ok) {
+                        // window.location.href = "Sucesso.cshtml";
+                        document.getElementById("lblStatus").innerText = "A denúncia foi atualizada!"
+                    } else {
+                        document.getElementById("lblStatus").innerText = "Falha na conexão com a API, por favor tente novamente em alguns minutos! Pedimos desculpas pela inconveniência!";
+                    }
+                } catch (error) {
+                    console.error("Erro ao atualizar a denúncia:", error);
+                    document.getElementById("lblResultado").innerText = "Erro ao atualizar a denúncia";
+                }
+            }
+        </script> *@
+    </body>
+    </html>
+}
+
+@code {
+    private DenunciasModel denuncia;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        denuncia = await Http.GetFromJsonAsync<DenunciasModel>($"http://localhost:5041/api/Denuncias/DetalhesDenuncia/{Id}");
+    }
+
+    private void VoltarParaLista()
+    {
+        NavigationManager.NavigateTo("/VerificarDenuncias");
+    }
+}

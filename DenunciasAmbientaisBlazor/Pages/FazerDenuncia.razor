@@ -1,0 +1,81 @@
+﻿@page "/FazerDenuncia"
+
+<PageTitle>Index</PageTitle>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @* <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"> *@
+    <title>Denúncias ambientais anônimas</title>
+</head>
+
+<body>
+    <form id="formDenuncia" enctype="multipart/form-data">
+        <label for="descricao">Descrição da denúncia*:</label><br />
+        @* <input type="text" id="descricao" name="descricao" required><br> *@
+
+        <textarea id="descricao" name="descricao" rows="4" cols="50" required></textarea>
+        <br><br />
+
+        <label for="tipo">Tipo da denúncia*:</label>
+        <select id="tipo" name="tipo" required>
+            <option value="" disabled selected>Selecione um tipo</option>
+            <option value="1">Desmatamento</option>
+            <option value="2">Poluição do ar</option>
+            <option value="3">Poluição da água</option>
+            <option value="4">Caça ilegal</option>
+            <option value="5">Tráfico de animais</option>
+            <option value="6">Descarte irregular</option>
+            <option value="7">Pesca predatória</option>
+            <option value="8">Queimadas ilegais</option>
+            <option value="9">Potencial enchentes</option>
+            <option value="10">Abuso de animais</option>
+            <option value="11">Outro (especifique na descrição)</option>
+        </select><br><br />
+
+        <label for="local">Local da denúncia*:</label><br />
+        <input type="text" id="local" name="local" required><br><br />
+
+        <label for="foto">Foto da denúncia (imagem)*:</label><br />
+        <input type="file" id="foto" name="foto" accept="image/*"><br><br />
+
+
+        <br /><br /><br /><br />
+        <button type="button" onclick="enviarDenuncia()">Enviar Denúncia</button>
+    </form>
+
+    <br /><br />
+    <div id="lblStatus"></div>
+
+
+
+    <script>
+        async function enviarDenuncia() {
+            var form = document.getElementById("formDenuncia");
+            var formData = new FormData(form);
+
+            var url = "http://localhost:5041/api/Denuncias/adicionarDenuncia";
+            // window.location.href = "Sucesso.cshtml";
+
+            try {
+                var resposta = await fetch(url, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (resposta.ok) {
+                    // window.location.href = "Sucesso.cshtml";
+                    document.getElementById("lblStatus").innerText = "Sua denúncia foi enviada com sucesso e será verificada o quanto antes! Obrigado!"
+                } else {
+                    document.getElementById("lblStatus").innerText = "Falha na conexão com a API, verifique se algum campo está vazio e se a imagem foi selecionada, caso o erro persista por favor tente novamente em alguns minutos! Pedimos desculpas pela inconveniência!";
+                }
+            } catch (error) {
+                console.error("Erro ao enviar a denúncia:", error);
+                document.getElementById("lblResultado").innerText = "Erro ao enviar a denúncia";
+            }
+        }
+    </script>
+</body>
+</html>
